@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  Int             @id @default(autoincrement())
+  name                String
+  email               String          @unique
+  password            String
+  role                String          // "PATIENT" | "DOCTOR"
+  phone               String?
+  createdAt           DateTime        @default(now())
+
+  doctorProfile       DoctorProfile?
+  patientAppointments Appointment[]   @relation("PatientAppointments")
+  doctorAppointments  Appointment[]   @relation("DoctorAppointments")
+}
+
+model DoctorProfile {
+  id                  Int      @id @default(autoincrement())
+  userId              Int      @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialization      String
+  bio                 String
+  experienceYears     Int      @default(5)
+  consultationFee     Float    @default(50.0)
+  clinicAddress       String   @default("City Health Medical Complex, Suite 204")
+  workingHoursStart   String   @default("09:00")
+  workingHoursEnd     String   @default("17:00")
+  workingDays         String   @default("Monday,Tuesday,Wednesday,Thursday,Friday")
+  slotDurationMinutes Int      @default(30)
+}
+
+model Appointment {
+  id                Int      @id @default(autoincrement())
+  patientId         Int
+  patient           User     @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId          Int
+  doctor            User     @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Cascade)
+  appointmentDate   String   // format "YYYY-MM-DD"
+  timeSlot          String   // e.g. "09:00" or "09:00 - 09:30"
+  reason            String
+  status            String   @default("PENDING") // PENDING, CONFIRMED, COMPLETED, CANCELLED, REJECTED
+  consultationNotes String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
